@@ -80,6 +80,7 @@ module "irsa_amp_query" {
 }
 
 module "helm_addon" {
+  depends_on = [module.eks_blueprints, module.eks_blueprints_kubernetes_addons]
   source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons/helm-addon?ref=v4.24.0"
   helm_config = {
     name       = "kube-prometheus-stack"
