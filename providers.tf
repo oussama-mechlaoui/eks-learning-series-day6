@@ -1,3 +1,7 @@
+provider "aws" {
+  region  = var.region
+}
+
 provider "kubernetes" {
   experiments {
     manifest_resource = true

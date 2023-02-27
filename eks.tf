@@ -31,7 +31,7 @@ module "eks_blueprints" {
   managed_node_groups = {
     managed_ng_spot_blueprints = {
       remote_access = true
-      ec2_ssh_key = var.key
+      ec2_ssh_key = var.ec2_key
       node_group_name = "managed_ng_blueprints"
       capacity_type   = "SPOT"
       instance_types  = ["m5.large"] // Instances with same specs for memory and CPU
