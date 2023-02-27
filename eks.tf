@@ -5,7 +5,7 @@
 module "eks_blueprints" {
   
   source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.24.0"
-
+  enable_windows_support = true
   cluster_name    = local.name
   enable_irsa     = true
 
@@ -29,6 +29,61 @@ module "eks_blueprints" {
 
   # EKS MANAGED NODE GROUPS
   managed_node_groups = {
+    managed_ng_spot_windows_blueprints = {
+      ami_type = "WINDOWS_CORE_2019_x86_64" # AL2_x86_64, AL2_x86_64_GPU, AL2_ARM_64, BOTTLEROCKET_x86_64, BOTTLEROCKET_ARM_64
+      remote_access = true
+      ec2_ssh_key = var.ec2_key
+      k8s_taints = [{
+        key = "workload",
+        value = "windows",
+        effect = "NO_SCHEDULE"
+      }]
+      node_group_name = "managed_ng_windows_blueprints"
+      capacity_type   = "SPOT"
+      instance_types  = ["m5.large"] // Instances with same specs for memory and CPU
+    
+      # Node Group network configuration
+      subnet_type = "public" # public or private - Default uses the private subnets used in control plane if you don't pass the "subnet_ids"
+      subnet_ids  = []        # Defaults to private subnet-ids used by EKS Control plane. Define your private/public subnets list with comma separated subnet_ids  = ['subnet1','subnet2','subnet3']
+    
+      min_size = 3// Scale-down to zero nodes when no workloads are running, useful for pre-production environments
+      max_size= 3
+      desired_size= 3
+          
+      # This is so cluster autoscaler can identify which node (using ASGs tags) to scale-down to zero nodes
+      additional_tags = {
+            "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType" = "SPOT"
+            "k8s.io/cluster-autoscaler/node-template/label/eks/node_group_name"            = "managed_ng_windows_blueprints"
+            "auto-delete"                                                                  = "no"
+            "auto-stop"                                                                    = "no"
+      }
+    }
+    
+    managed_ng_spot_bottlerocket_blueprints = {
+      ami_type = "BOTTLEROCKET_x86_64" # AL2_x86_64, AL2_x86_64_GPU, AL2_ARM_64, BOTTLEROCKET_x86_64, BOTTLEROCKET_ARM_64
+      remote_access = true
+      ec2_ssh_key = var.ec2_key
+      node_group_name = "managed_ng_bottlerocket_blueprints"
+      capacity_type   = "SPOT"
+      instance_types  = ["m5.large"] // Instances with same specs for memory and CPU
+    
+      # Node Group network configuration
+      subnet_type = "private" # public or private - Default uses the private subnets used in control plane if you don't pass the "subnet_ids"
+      subnet_ids  = []        # Defaults to private subnet-ids used by EKS Control plane. Define your private/public subnets list with comma separated subnet_ids  = ['subnet1','subnet2','subnet3']
+    
+      min_size = 3// Scale-down to zero nodes when no workloads are running, useful for pre-production environments
+      max_size= 3
+      desired_size= 3
+          
+      # This is so cluster autoscaler can identify which node (using ASGs tags) to scale-down to zero nodes
+      additional_tags = {
+            "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType" = "SPOT"
+            "k8s.io/cluster-autoscaler/node-template/label/eks/node_group_name"            = "managed_ng_bottlerocket_blueprints"
+            "auto-delete"                                                                  = "no"
+            "auto-stop"                                                                    = "no"
+      }
+    }
+    
     managed_ng_spot_blueprints = {
       remote_access = true
       ec2_ssh_key = var.ec2_key
@@ -47,7 +102,7 @@ module "eks_blueprints" {
       # This is so cluster autoscaler can identify which node (using ASGs tags) to scale-down to zero nodes
       additional_tags = {
             "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType" = "SPOT"
-            "k8s.io/cluster-autoscaler/node-template/label/eks/node_group_name"            = "mng-spot-2vcpu-8mem"
+            "k8s.io/cluster-autoscaler/node-template/label/eks/node_group_name"            = "managed_ng_blueprints"
             "auto-delete"                                                                  = "no"
             "auto-stop"                                                                    = "no"
       }
